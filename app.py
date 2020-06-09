@@ -1,7 +1,7 @@
 import os
 
 from cs50 import SQL
-# import sqlite3
+import sqlite3
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
@@ -34,8 +34,8 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///db.sqlite3")
-# db = sqlite3.connect('finance.db')
+# db = SQL("sqlite:///finance.db")
+db = sqlite3.connect('finance.db')
 
 bought = 0
 sold = 0
