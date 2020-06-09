@@ -1,10 +1,7 @@
 import os
 
 from cs50 import SQL
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-
+# import sqlite3
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
@@ -37,9 +34,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-engine = create_engine(os.getenv("DATABASE_URL"))
-db = scoped_session(sessionmaker(bind=engine)) 
-# db = DATABASE_URL("sqlite:///finance.db")
+db = SQL("sqlite:///finance.db")
 # db = sqlite3.connect('finance.db')
 
 bought = 0
