@@ -35,7 +35,7 @@ Session(app)
 
 # Configure CS50 Library to use SQLite database
 # DATABASE_URL = SQL("sqlite:///finance.db")
-db = DATABASE_URL
+db = SQL(DATABASE_URL)
 # db = sqlite3.connect('finance.db')
 
 bought = 0
