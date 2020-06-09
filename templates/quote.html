@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Quote
+{% endblock %}
+
+{% block main %}
+    <h1>Quote</h1>
+    <h6>Check how much do the stocks cost right now</h6><br><br>
+    {% if post == 0 %}
+    <form action="/quote" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="Symbol" placeholder="Stock Name" type="text">
+        </div>
+        <button class="btn btn-primary" type="submit">Get Quote</button>
+    </form>
+    {% elif post == 1 %}
+    <form action="/quote" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="Symbol" placeholder="Stock Name" type="text">
+        </div>
+        <button class="btn btn-primary" type="submit">Get Quote</button>
+    </form>
+    <div class="alert alert-info" role="alert">
+          A share of {{ name }} {{ symbol }} cost ${{ price }}.
+    </div>
+    {% elif post == 2 %}
+     <form action="/quote" method="post">
+        <div class="form-group">
+            <div class="alert alert-danger" role="alert">
+                  Symbol not found, try AAPL or TSLA
+            </div>
+            <input autocomplete="off" autofocus class="form-control" name="Symbol" placeholder="Stock Name" type="text">
+        </div>
+        <button class="btn btn-primary" type="submit">Get Quote</button>
+    </form>
+    {% endif %}
+    <h4>Famous Tech Stocks</h4>
+    <ul class="list-group">
+         <li class="list-group-item">Tesla - TSLA</li>
+         <li class="list-group-item">Amazon - AMZN</li>
+         <li class="list-group-item">Google - GOOGL</li>
+         <li class="list-group-item">APPLE - AAPL</li>
+         <li class="list-group-item">FACEBOOK - FB</li>
+         <li class="list-group-item">Microsoft - MSFT</li>
+         <li class="list-group-item">Netflix - NFLX</li>
+    </ul>
+{% endblock %}

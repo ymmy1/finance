@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Buy
+{% endblock %}
+
+{% block main %}
+<h1>Buy</h1>
+<h6>Type the name of the stock and a number of shares you would like to purchase</h6><br><br>
+    {% if scene == 0 %}
+    <form action="/buy" method="post">
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="symbol" placeholder="Stock Name" type="text">
+        </div>
+        <div class="form-group">
+            <input class="form-control" name="shares" placeholder="Number of Shares" type="number">
+        </div>
+        <button class="btn btn-primary" type="submit">Buy</button>
+    </form>
+    {% else %}
+    <form action="/buy" method="post">
+        <div class="alert alert-danger" role="alert">
+                  Symbol not found, or not enough money or cant buy 0 stocks, God knows why honestly
+        </div>
+        <div class="form-group">
+            <input autocomplete="off" autofocus class="form-control" name="symbol" placeholder="Stock Name" type="text">
+        </div>
+        <div class="form-group">
+            <input class="form-control" name="shares" placeholder="Number of Shares" type="number">
+        </div>
+        <button class="btn btn-primary" type="submit">Buy</button>
+    </form>
+    {% endif %}
+
+    <h4>Famous Tech Stocks</h4>
+    <ul class="list-group">
+         <li class="list-group-item">Tesla - TSLA</li>
+         <li class="list-group-item">Amazon - AMZN</li>
+         <li class="list-group-item">Google - GOOGL</li>
+         <li class="list-group-item">APPLE - AAPL</li>
+         <li class="list-group-item">FACEBOOK - FB</li>
+         <li class="list-group-item">Microsoft - MSFT</li>
+         <li class="list-group-item">Netflix - NFLX</li>
+    </ul>
+{% endblock %}

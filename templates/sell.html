@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Sell
+{% endblock %}
+
+{% block main %}
+<h1>Sell</h1>
+<h6>Choose the number of purchased stocks you want to sell</h6><br><br>
+    <form action="/sell" method="post">
+            {% for row in rows %}
+                {% if row["Symbol"]!= 'CASH' %}
+                <label for="{{ row["Symbol"] }}">{{ row["Symbol"] }} ({{ row["Name"] }})</label><br>
+                <div class="form-group">
+                    <input id="{{ row["Symbol"] }}" class="form-control" autocomplete="off" name="{{ row["Symbol"] }}" min="1" max="{{ row['Shares'] }}" placeholder="1-{{ row['Shares'] }}" type="number">
+                </div>
+                {% endif %}
+                {% endfor %}
+        <button class="btn btn-primary" type="submit">Sell Stocks</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+
+{% block main %}
+    <h1>Welcome</h1>
+    <h6>See your stocks bellow</h6><br><br>
+    {% if bought == 1 %}
+        <div class="alert alert-success border text-center" role="alert">Bought!</div>
+    {% endif %}
+    {% if sold %}
+        <div class="alert alert-primary border text-center" role="alert">Sold!</div>
+    {% endif %}
+    <table class="table">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">Status</th>
+                <th scope="col">Stock Name</th>
+                <th scope="col">Company Name</th>
+                <th scope="col">Shares</th>
+                <th scope="col">Price</th>
+                <th scope="col">TOTAL</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr class="table-warning">
+                {% if row["Status"] %}
+                    <td>{{ row["Status"] }}</td>
+                {% else %}
+                    <td colspan="1"></td>
+                {% endif %}
+                <td>{{ row["Symbol"] }}</td>
+                {% if row["Name"] %}
+                    <td>{{ row["Name"] }}</td>
+                    <td>{{ row["Shares"] }}</td>
+                    <td>{{ row["Price"] }}</td>
+                {% else %}
+                    <td colspan="3"></td>
+                {% endif %}
+                <td>{{ row["TOTAL"] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot class="thead-dark">
+            <tr class>
+                <th colspan="5"></td>
+                <th>{{ total }}</th>
+            </tr>
+        </tfoot>
+</table>
+{% endblock %}

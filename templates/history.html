@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    History
+{% endblock %}
+
+{% block main %}
+    <h1>History</h1>
+    <h6>Keep track on your purchases and sellings</h6><br><br>
+    <table class="table">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">Stock Name</th>
+                <th scope="col">Company Name</th>
+                <th scope="col">Shares</th>
+                <th scope="col">Price</th>
+                <th scope="col">Transacted</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            {% if row["Shares"] < 0 %}
+                <tr class="table-danger">
+                    <td>{{ row["Symbol"] }}</td>
+                    <td>{{ row["Name"] }}</td>
+                    <td>{{ row["Shares"] }}</td>
+                    <td>{{ row["Price"] }}</td>
+                    <td>{{ row["Time"] }}</td>
+                </tr>
+            {% else %}
+                <tr class="table-success">
+                    <td>{{ row["Symbol"] }}</td>
+                    <td>{{ row["Name"] }}</td>
+                    <td>{{ row["Shares"] }}</td>
+                    <td>{{ row["Price"] }}</td>
+                    <td>{{ row["Time"] }}</td>
+                </tr>
+            {% endif%}
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endblock %}
