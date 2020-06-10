@@ -43,10 +43,15 @@ Session(app)
 
 # Configure CS50 Library to use SQLite database
 # db = SQL("sqlite:///finance.db")
+
 # Set up database
 engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 # db = sqlite3.connect('finance.db')
+
+# Creating users
+db.execute("CREATE TABLE IF NOT EXISTS 'users' ('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 'nickname' TEXT NOT NULL, 'username' TEXT NOT NULL, 'hash' TEXT NOT NULL)")
+
 
 bought = 0
 sold = 0
