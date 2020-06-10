@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 
-from cs50 import SQL
+# from cs50 import SQL
 # import sqlite3
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
 from flask_session import Session
@@ -51,7 +51,7 @@ db = scoped_session(sessionmaker(bind=engine))
 bought = 0
 sold = 0
 @app.route("/")
-@login_required
+
 def index():
     """Show portfolio of stocks"""
     user = db.execute("SELECT * FROM users WHERE id = :id", id=session["user_id"])
@@ -93,7 +93,7 @@ def index():
 
 
 @app.route("/buy", methods=["GET", "POST"])
-@login_required
+
 def buy():
     """Buy shares of stock"""
     scene = 0
@@ -144,7 +144,7 @@ def buy():
 
 
 @app.route("/history")
-@login_required
+
 def history():
     """Show history of transactions"""
     user = db.execute("SELECT * FROM users WHERE id = :id", id = session["user_id"])
@@ -203,7 +203,7 @@ def logout():
 
 
 @app.route("/quote", methods=["GET", "POST"])
-@login_required
+
 def quote():
     post = 0
     username = db.execute("SELECT * FROM users WHERE id = :id",
@@ -267,7 +267,7 @@ def register():
         return redirect("/")
 
 @app.route("/sell", methods=["GET", "POST"])
-@login_required
+
 def sell():
     """Sell shares of stock"""
     user = db.execute("SELECT * FROM users WHERE id = :id", id = session["user_id"])
