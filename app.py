@@ -1,15 +1,11 @@
 import os
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
+import requests
 
-
-from cs50 import SQL
-# import sqlite3
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
 from flask_session import Session
-from tempfile import mkdtemp
-from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import apology, login_required, lookup, usd
@@ -50,8 +46,8 @@ db = scoped_session(sessionmaker(bind=engine))
 # db = sqlite3.connect('finance.db')
 
 # Creating users
-db.execute("CREATE TABLE IF NOT EXISTS 'users' ('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 'nickname' TEXT NOT NULL, 'username' TEXT NOT NULL, 'hash' TEXT NOT NULL)")
-
+db.execute("CREATE TABLE IF NOT EXISTS users(id serial PRIMARY KEY NOT NULL,username VARCHAR (10) UNIQUE NOT NULL,nickname VARCHAR (10) UNIQUE NOT NULL,hash VARCHAR (150) NOT NULL)")
+db.commit()
 
 bought = 0
 sold = 0
@@ -59,18 +55,20 @@ sold = 0
 @login_required
 def index():
     """Show portfolio of stocks"""
-    user = db.execute("SELECT * FROM users WHERE id = :id", id=session["user_id"])
+    user = db.execute("SELECT * FROM users WHERE (id = :id)", {"id"=session["user_id"]}).fetchall()
 
     history = " ".join((user[0]["username"], "history"))
-    db.execute("CREATE TABLE IF NOT EXISTS :history ('id' INTEGER PRIMARY KEY NOT NULL, 'Symbol' TEXT, 'Name' TEXT, 'Shares' INTEGER, 'Price' INTEGER, 'Time' TEXT)", history=history)
+    db.execute("CREATE TABLE IF NOT EXISTS :history (id INTEGER PRIMARY KEY NOT NULL, Symbol TEXT, Name TEXT, Shares INTEGER, Price INTEGER, Time TEXT)", {"history": history})
+    db.execute("CREATE TABLE IF NOT EXISTS :username (id INTEGER PRIMARY KEY NOT NULL, Status TEXT, Symbol TEXT, Name TEXT, Shares INTEGER, Price INTEGER, TOTAL INTEGER)", {"username" : user[0]["username"]})
+    db.commit()
 
-    db.execute("CREATE TABLE IF NOT EXISTS :username ('id' INTEGER PRIMARY KEY NOT NULL, 'Status' TEXT, 'Symbol' TEXT, 'Name' TEXT, 'Shares' INTEGER, 'Price' INTEGER, 'TOTAL' INTEGER)", username = user[0]["username"])
-    rows = db.execute("SELECT * FROM :id ORDER BY id DESC", id=user[0]["username"])
-    db.execute("INSERT OR REPLACE INTO :username (id, Symbol, TOTAL) VALUES ('1','CASH', :cash)", username=user[0]["username"],cash=user[0]["cash"])
+    rows = db.execute("SELECT * FROM :id ORDER BY id DESC", {"id": user[0]["username"]}).fetchall()
+    db.execute("INSERT OR REPLACE INTO :username (id, Symbol, TOTAL) VALUES ('1','CASH', :cash)", {"username": user[0]["username"], "cash": user[0]["cash"]})
+    db.commit()
 
 
     if not rows:
-        rows = db.execute("SELECT * FROM :id ORDER BY id DESC", id=user[0]["username"])
+        rows = db.execute("SELECT * FROM :id ORDER BY id DESC", {"id": user[0]["username"]}).fetchall
         rows[0].update({"TOTAL" : usd(rows[0]["TOTAL"])})
         return render_template("index.html", username=user[0]["username"], total=usd(user[0]["cash"]), rows_len=int(len(rows)), rows=rows)
     total = 0
@@ -79,9 +77,9 @@ def index():
             stock = lookup(rows[i]["Symbol"])
             newtotal = stock["price"] * rows[i]["Shares"]
             theid = rows[i]["id"]
-            db.execute("UPDATE :username SET Status = :status, Symbol = :symbol, Name = :name, Price = :price, TOTAL =:newtotal WHERE id =:theid",
-                    username=user[0]["username"], status=stock["status"], symbol=stock["symbol"], name=stock["name"], price=stock["price"], newtotal=newtotal, theid=theid)
-
+            db.execute("UPDATE :username SET Status = :status, Symbol = :symbol, Name = :name, Price = :price, TOTAL =:newtotal WHERE (id = :theid)",
+                    {"username": user[0]["username"], "status": stock["status"], "symbol": stock["symbol"], "name": stock["name"], "price" :stock["price"], "newtotal" :newtotal, "theid": theid})
+            db.commit()
         total = total + rows[i]["TOTAL"]
         if rows[i]["Price"]:
             rows[i].update({"Price" : usd(rows[i]["Price"])})
@@ -102,8 +100,8 @@ def index():
 def buy():
     """Buy shares of stock"""
     scene = 0
-    row = db.execute("SELECT * FROM users WHERE id = :id",
-                    id = session["user_id"])
+    row = db.execute("SELECT * FROM users WHERE (id = :id)",
+                    {"id" : session["user_id"]})
     if request.method == "GET":
 
         return render_template("buy.html", username=row[0]["username"], scene=scene)
@@ -123,28 +121,31 @@ def buy():
             scene = 1
             return render_template("buy.html", username=row[0]["username"], scene=scene)
         cash = row[0]["cash"] - toPay
-        db.execute("CREATE TABLE IF NOT EXISTS :username ('id' INTEGER PRIMARY KEY NOT NULL, 'Status' TEXT, 'Symbol' TEXT, 'Name' TEXT, 'Shares' INTEGER, 'Price' INTEGER, 'TOTAL' INTEGER)", username = row[0]["username"])
-        db.execute("UPDATE users SET cash = :cash WHERE id = :id", cash=cash, id = session["user_id"])
-        db.execute("INSERT OR REPLACE INTO :username (id, Symbol, TOTAL) VALUES ('1','CASH', :cash)", username=row[0]["username"],cash=cash)
+        db.execute("CREATE TABLE IF NOT EXISTS :username (id INTEGER PRIMARY KEY NOT NULL, Status TEXT, Symbol TEXT, Name TEXT, Shares INTEGER, Price INTEGER, TOTAL INTEGER)", {"username" : row[0]["username"]})
+        db.execute("UPDATE users SET cash = :cash WHERE (id = :id)", {"cash": cash, "id" : session["user_id"]})
+        db.commit()
+        db.execute("INSERT OR REPLACE INTO :username (id, Symbol, TOTAL) VALUES ('1','CASH', :cash)", {"username": row[0]["username"], "cash": cash})
 
-        stocks = db.execute("SELECT Symbol, Shares, TOTAL from :username", username=row[0]["username"])
+        stocks = db.execute("SELECT Symbol, Shares, TOTAL from :username", {"username": row[0]["username"]}).fetchall()
 
         exists = 0
         history = " ".join((row[0]["username"], "history"))
         for i in range(0, len(stocks), 1):
             if stocks[i]["Symbol"] and stocks[i]["Symbol"] == symbol["symbol"]:
-                db.execute("UPDATE :username SET Shares = :newshares, TOTAL = :newtotal WHERE Symbol = :symbol",
-                    username=row[0]["username"], newshares= int(shares)+stocks[i]["Shares"], newtotal=(stocks[i]["Shares"] + int(shares))*symbol["price"], symbol=symbol["symbol"])
+                db.execute("UPDATE :username SET Shares = :newshares, TOTAL = :newtotal WHERE (Symbol = :symbol)",
+                    {"username": row[0]["username"], "newshares": int(shares)+stocks[i]["Shares"], "newtotal": (stocks[i]["Shares"] + int(shares))*symbol["price"], "symbol": symbol["symbol"])}
+                db.commit()
                 exists = 1
 
         if not exists:
             db.execute("INSERT INTO :username (Status,Symbol, Name, Shares, Price, TOTAL) VALUES (:status, :symbol, :name, :shares, :price, :total)",
-                        username=row[0]["username"], status=symbol["status"], symbol=symbol["symbol"], name=symbol["name"], shares=int(shares), price=symbol["price"], total=toPay)
+                        {"username": row[0]["username"], "status": symbol["status"], "symbol": symbol["symbol"], "name": symbol["name"], "shares": int(shares), "price": symbol["price"], "total": toPay})
 
         global  bought
         bought = 1
         db.execute("INSERT INTO :history (Symbol, Name, Shares, Price, Time) VALUES (:symbol, :name, :shares, :price, datetime('now','localtime'))",
-                    history=history, symbol=symbol["symbol"], name=symbol["name"], shares=int(shares), price=symbol["price"])
+                    {"history": history, "symbol": symbol["symbol"], "name": symbol["name"], "shares": int(shares), "price": symbol["price"]})
+        db.commit()
         return redirect('/')
 
 
@@ -152,9 +153,9 @@ def buy():
 @login_required
 def history():
     """Show history of transactions"""
-    user = db.execute("SELECT * FROM users WHERE id = :id", id = session["user_id"])
+    user = db.execute("SELECT * FROM users WHERE (id = :id)", {"id": session["user_id"]}).fetchall()
     history = " ".join((user[0]["username"], "history"))
-    rows = db.execute("SELECT * FROM :history ORDER BY id DESC", history=history)
+    rows = db.execute("SELECT * FROM :history ORDER BY id DESC", {"history": history}).fetchall()
 
     return render_template("history.html", username=user[0]["username"], rows=rows)
 
@@ -178,8 +179,8 @@ def login():
             return apology("must provide password", 403)
 
         # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = :username",
-                          username=request.form.get("username"))
+        rows = db.execute("SELECT * FROM users WHERE (username = :username)",
+                          {"username": request.form.get("username")}).fetchall
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
@@ -211,8 +212,8 @@ def logout():
 @login_required
 def quote():
     post = 0
-    username = db.execute("SELECT * FROM users WHERE id = :id",
-                          id = session["user_id"])
+    username = db.execute("SELECT * FROM users WHERE (id = :id)",
+                          {"id": session["user_id"]})
     """Get stock quote."""
     if request.method == "POST":
         result = lookup(request.form.get("Symbol"))
@@ -243,8 +244,8 @@ def register():
             return apology("must provide password", 403)
 
         # Query database for username
-        rows = db.execute("SELECT * FROM users WHERE username = :username",
-                          username=request.form.get("username"))
+        rows = db.execute("SELECT * FROM users WHERE (username = :username)",
+                          {"username": request.form.get("username")}).fetchall()
 
         if len(rows) != 0 :
             return apology("this username is taken :(", 403)
@@ -259,11 +260,12 @@ def register():
         pas1 = ""
         pas2 = ""
         db.execute("INSERT INTO users (username, hash) VALUES (:username, :password)",
-                    username=request.form.get("username"),
-                    password=generate_password_hash(request.form.get("password")))
+                    {"username": request.form.get("username"),
+                    "password": generate_password_hash(request.form.get("password"))})
+        db.commit()
 
-        row = db.execute("SELECT * FROM users WHERE username = :username",
-                          username=request.form.get("username"))
+        row = db.execute("SELECT * FROM users WHERE (username = :username)",
+                          {"username": request.form.get("username")}).fetchall()
 
         # Remember which user has logged in
         session["user_id"] = row[0]["id"]
@@ -275,35 +277,38 @@ def register():
 @login_required
 def sell():
     """Sell shares of stock"""
-    user = db.execute("SELECT * FROM users WHERE id = :id", id = session["user_id"])
-    rows = db.execute("SELECT * FROM :username", username=user[0]["username"])
+    user = db.execute("SELECT * FROM users WHERE (id = :id)", {"id": session["user_id"]}).fetchall()
+    rows = db.execute("SELECT * FROM :username", {"username": user[0]["username"]}).fetchall()
     if request.method == "GET":
         return render_template("sell.html", username=user[0]["username"], rows=rows)
 
     history = " ".join((user[0]["username"], "history"))
     for i in range(0, len(rows), 1):
-        this_user = db.execute("SELECT cash FROM users WHERE id = :id", id = session["user_id"])
+        this_user = db.execute("SELECT cash FROM users WHERE (id = :id)", {"id": session["user_id"]}).fetchall()
         stock_name = rows[i]["Symbol"]
         shares_num = request.form.get(rows[i]["Symbol"])
         if shares_num and int(shares_num) > 0:
             shares_num = int(shares_num)
             update = lookup(stock_name)
             total = update["price"] * shares_num
-            db.execute("UPDATE :username SET Shares = :newshares WHERE Symbol = :symbol",
-                        username=user[0]["username"], newshares= rows[i]["Shares"] - shares_num, symbol=rows[i]["Symbol"])
-            db.execute("UPDATE users SET cash = :newcash WHERE username = :username",
-                        newcash=this_user[0]["cash"] + total, username=user[0]["username"])
+            db.execute("UPDATE :username SET Shares = :newshares WHERE (Symbol = :symbol)",
+                        {"username": user[0]["username"], "newshares": rows[i]["Shares"] - shares_num, "symbol": rows[i]["Symbol"]})
+            db.execute("UPDATE users SET cash = :newcash WHERE (username = :username)",
+                        {"newcash": this_user[0]["cash"] + total, "username": user[0]["username"]})
 
             db.execute("INSERT INTO :history (Symbol, Name, Shares, Price, Time) VALUES (:symbol, :name, :shares, :price, datetime('now','localtime'))",
-                    history=history, symbol=update["symbol"], name=update["name"], shares=0-int(shares_num), price=update["price"])
+                    {"history": history, "symbol": update["symbol"], "name": update["name"], "shares": 0-int(shares_num), "price": update["price"]})
+            db.commit()
 
             if int(rows[i]["Shares"]) == shares_num:
-                db.execute("DELETE FROM :username WHERE Symbol = :symbol",
-                            username=user[0]["username"], symbol=rows[i]["Symbol"])
-    cash = db.execute("SELECT cash FROM users WHERE id = :id", id = session["user_id"])
-    db.execute("UPDATE users SET cash = :cash WHERE id = :id", cash=cash[0]["cash"], id = session["user_id"])
-    db.execute("INSERT OR REPLACE INTO :username (id, Symbol, TOTAL) VALUES ('1','CASH', :cash)", username=user[0]["username"], cash=cash[0]["cash"])
+                db.execute("DELETE FROM :username WHERE (Symbol = :symbol)",
+                            {"username": user[0]["username"], "symbol": rows[i]["Symbol"]})
+                db.commit()
 
+    cash = db.execute("SELECT cash FROM users WHERE (id = :id)", {"id" : session["user_id"]}).fetchall()
+    db.execute("UPDATE users SET cash = :cash WHERE (id = :id)", {"cash": cash[0]["cash"], "id" : session["user_id"]})
+    db.execute("INSERT OR REPLACE INTO :username (id, Symbol, TOTAL) VALUES ('1','CASH', :cash)", {"username": user[0]["username"], "cash": cash[0]["cash"]})
+    db.commit()
     global  sold
     sold = 1
 
