@@ -55,7 +55,7 @@ sold = 0
 @login_required
 def index():
     """Show portfolio of stocks"""
-    user = db.execute("SELECT * FROM users WHERE (id = :id)", {"id"=session["user_id"]}).fetchall()
+    user = db.execute("SELECT * FROM users WHERE (id = :id)", {"id": session["user_id"]}).fetchall()
 
     history = " ".join((user[0]["username"], "history"))
     db.execute("CREATE TABLE IF NOT EXISTS :history (id INTEGER PRIMARY KEY NOT NULL, Symbol TEXT, Name TEXT, Shares INTEGER, Price INTEGER, Time TEXT)", {"history": history})
