@@ -76,14 +76,14 @@ def index():
         if rows[i]["Symbol"] != 'CASH':
             stock = lookup(rows[i]["Symbol"])
             newtotal = stock["price"] * rows[i]["Shares"]
-            theid = rows[i]["id"]
-            db.execute("UPDATE :username SET Status = :status, Symbol = :symbol, Name = :name, Price = :price, TOTAL =:newtotal WHERE (id = :theid)",
-                    {"username": user[0]["username"], "status": stock["status"], "symbol": stock["symbol"], "name": stock["name"], "price" :stock["price"], "newtotal" :newtotal, "theid": theid})
-            db.commit()
-        total = total + rows[i]["TOTAL"]
-        if rows[i]["Price"]:
-            rows[i].update({"Price" : usd(rows[i]["Price"])})
-        rows[i].update({"TOTAL" : usd(rows[i]["TOTAL"])})
+        theid = rows[i]["id"]
+        db.execute("UPDATE :username SET Status = :status, Symbol = :symbol, Name = :name, Price = :price, TOTAL =:newtotal WHERE (id = :theid)",
+                {"username": user[0]["username"], "status": stock["status"], "symbol": stock["symbol"], "name": stock["name"], "price" :stock["price"], "newtotal" :newtotal, "theid": theid})
+        db.commit()
+    total = total + rows[i]["TOTAL"]
+    if rows[i]["Price"]:
+        rows[i].update({"Price" : usd(rows[i]["Price"])})
+    rows[i].update({"TOTAL" : usd(rows[i]["TOTAL"])})
 
     total = usd(total)
     global  bought
@@ -133,7 +133,7 @@ def buy():
         for i in range(0, len(stocks), 1):
             if stocks[i]["Symbol"] and stocks[i]["Symbol"] == symbol["symbol"]:
                 db.execute("UPDATE :username SET Shares = :newshares, TOTAL = :newtotal WHERE (Symbol = :symbol)",
-                    {"username": row[0]["username"], "newshares": int(shares)+stocks[i]["Shares"], "newtotal": (stocks[i]["Shares"] + int(shares))*symbol["price"], "symbol": symbol["symbol"])}
+                    {"username": row[0]["username"], "newshares": int(shares)+stocks[i]["Shares"], "newtotal": (stocks[i]["Shares"] + int(shares))*symbol["price"], "symbol": symbol["symbol"]})
                 db.commit()
                 exists = 1
 
