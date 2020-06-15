@@ -27,20 +27,20 @@
         <tbody>
             {% for row in rows %}
             <tr class="table-warning">
-                {% if row["Status"] %}
-                    <td>{{ row["Status"] }}</td>
+                {% if row["status"] %}
+                    <td>{{ row["status"] }}</td>
                 {% else %}
                     <td colspan="1"></td>
                 {% endif %}
-                <td>{{ row["Symbol"] }}</td>
-                {% if row["Name"] %}
-                    <td>{{ row["Name"] }}</td>
-                    <td>{{ row["Shares"] }}</td>
-                    <td>{{ row["Price"] }}</td>
+                <td>{{ row["symbol"] }}</td>
+                {% if row["name"] %}
+                    <td>{{ row["name"] }}</td>
+                    <td>{{ row["shares"] }}</td>
+                    <td>{{ row["price"] }}</td>
                 {% else %}
                     <td colspan="3"></td>
                 {% endif %}
-                <td>{{ row["TOTAL"] }}</td>
+                <td>{{ row["total"] }}</td>
             </tr>
             {% endfor %}
         </tbody>

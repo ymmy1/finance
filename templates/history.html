@@ -14,26 +14,26 @@
                 <th scope="col">Company Name</th>
                 <th scope="col">Shares</th>
                 <th scope="col">Price</th>
-                <th scope="col">Transacted</th>
+                <th scope="col">Transacted (UTC±0)</th>
             </tr>
         </thead>
         <tbody>
             {% for row in rows %}
-            {% if row["Shares"] < 0 %}
+            {% if row["shares"] < 0 %}
                 <tr class="table-danger">
-                    <td>{{ row["Symbol"] }}</td>
-                    <td>{{ row["Name"] }}</td>
-                    <td>{{ row["Shares"] }}</td>
-                    <td>{{ row["Price"] }}</td>
-                    <td>{{ row["Time"] }}</td>
+                    <td>{{ row["symbol"] }}</td>
+                    <td>{{ row["name"] }}</td>
+                    <td>{{ row["shares"] }}</td>
+                    <td>{{ row["price"] }}</td>
+                    <td>{{ row["time"] }}</td>
                 </tr>
             {% else %}
                 <tr class="table-success">
-                    <td>{{ row["Symbol"] }}</td>
-                    <td>{{ row["Name"] }}</td>
-                    <td>{{ row["Shares"] }}</td>
-                    <td>{{ row["Price"] }}</td>
-                    <td>{{ row["Time"] }}</td>
+                    <td>{{ row["symbol"] }}</td>
+                    <td>{{ row["name"] }}</td>
+                    <td>{{ row["shares"] }}</td>
+                    <td>{{ row["price"] }}</td>
+                    <td>{{ row["time"] }}</td>
                 </tr>
             {% endif%}
             {% endfor %}
