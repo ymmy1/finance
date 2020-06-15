@@ -36,11 +36,11 @@
                 {% if row["name"] %}
                     <td>{{ row["name"] }}</td>
                     <td>{{ row["shares"] }}</td>
-                    <td>{{ row["price"] }}</td>
+                    <td>{{ row["dollar_price"] }}</td>
                 {% else %}
                     <td colspan="3"></td>
                 {% endif %}
-                <td>{{ row["total"] }}</td>
+                <td>{{ row["dollar_total"] }}</td>
             </tr>
             {% endfor %}
         </tbody>

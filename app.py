@@ -31,7 +31,7 @@ def after_request(response):
     return response
 
 # Custom filter
-app.jinja_env.filters["usd"] = usd
+# app.jinja_env.filters["usd"] = usd
 
 # Configure session to use filesystem (instead of signed cookies)
 # app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -60,12 +60,12 @@ def index():
     user = db.execute("SELECT * FROM users WHERE (id = :id)", {"id": session["user_id"]}).fetchall()
 
     history = "_".join((user[0]["username"], "history"))
-    db.execute("CREATE TABLE IF NOT EXISTS "+history+" (id serial PRIMARY KEY NOT NULL, symbol TEXT, name TEXT, shares INTEGER, price INTEGER, Time TEXT)")
-    db.execute("CREATE TABLE IF NOT EXISTS "+user[0]['username']+" (id serial PRIMARY KEY, status TEXT, symbol TEXT, name TEXT, shares INTEGER, price INTEGER, total INTEGER)")
+    db.execute("CREATE TABLE IF NOT EXISTS "+history+" (id serial PRIMARY KEY NOT NULL, symbol TEXT, name TEXT, shares INTEGER, price NUMERIC, dollar_price TEXT, time TEXT)")
+    db.execute("CREATE TABLE IF NOT EXISTS "+user[0]['username']+" (id serial PRIMARY KEY, status TEXT, symbol TEXT, name TEXT, shares INTEGER, price NUMERIC, dollar_price TEXT, total NUMERIC, dollar_total TEXT)")
     db.commit()
 
     # db.execute("INSERT OR REPLACE INTO "+user[0]['username']+" (id, symbol, total) VALUES ('1','CASH', :cash)", { "cash": user[0]["cash"]})
-    db.execute("INSERT INTO "+user[0]['username']+" (id, symbol, total) VALUES ('0','CASH', :cash) ON CONFLICT (id) DO UPDATE SET total = :cash",{"cash": user[0]["cash"]} )
+    db.execute("INSERT INTO "+user[0]['username']+" (id, symbol, dollar_total, total) VALUES ('0','CASH', :dt, :cash) ON CONFLICT (id) DO UPDATE SET total = :cash, dollar_total = :dt",{"cash": user[0]["cash"], "dt" : usd(user[0]["cash"])} )
     db.commit()
 
     rows = db.execute("SELECT * FROM "+user[0]['username']+" ORDER BY id DESC").fetchall()
@@ -76,13 +76,10 @@ def index():
             stock = lookup(rows[i]["symbol"])
             newtotal = stock["price"] * rows[i]["shares"]
             theid = rows[i]["id"]
-            db.execute("UPDATE "+user[0]['username']+" SET status = :status, symbol = :symbol, name = :name, price = :price, total =:newtotal WHERE (id = :theid)",
-                    { "status": stock["status"], "symbol": stock["symbol"], "name": stock["name"], "price" : stock["price"], "newtotal" :newtotal, "theid": theid})
+            db.execute("UPDATE "+user[0]['username']+" SET status = :status, symbol = :symbol, name = :name, price = :price, dollar_price = :dp, dollar_total = :dt, total =:newtotal WHERE (id = :theid)",
+                    { "status": stock["status"], "symbol": stock["symbol"], "name": stock["name"], "price" : stock["price"], "newtotal" :newtotal, "dp" : usd(stock["price"]), "dt" : usd(newtotal), "theid": theid})
             db.commit()
         total = total + rows[i]["total"]
-        # if rows[i]["price"]:
-        #     # rows[i]["price"] = usd(rows[i]["price"])
-        # # rows[i].update({"total" : usd(rows[i]["total"])})
 
     total = usd(total)
     global  bought
@@ -91,7 +88,7 @@ def index():
     global  sold
     sstatus = sold
     sold = 0
-    return render_template("index.html", username=user[0]["username"], total=total, rows_len=int(len(rows)), rows=rows, bought=bstatus, sold=sstatus)
+    return render_template("index.html", username=user[0]["username"], total=total, rows=rows, bought=bstatus, sold=sstatus)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -130,19 +127,19 @@ def buy():
         history = "_".join((rows[0]["username"], "history"))
         for i in range(0, len(stocks), 1):
             if stocks[i]["symbol"] and stocks[i]["symbol"] == symbol["symbol"]:
-                db.execute("UPDATE "+rows[0]['username']+" SET shares = :newshares, total = :newtotal WHERE (symbol = :symbol)",
-                    {"newshares": int(shares)+stocks[i]["shares"], "newtotal": (stocks[i]["shares"] + int(shares))*symbol["price"], "symbol": symbol["symbol"]})
+                db.execute("UPDATE "+rows[0]['username']+" SET shares = :newshares, total = :newtotal, dollar_total = :dt WHERE (symbol = :symbol)",
+                    {"newshares": int(shares)+stocks[i]["shares"], "newtotal": (stocks[i]["shares"] + int(shares))*symbol["price"], "dt" : usd((stocks[i]["shares"] + int(shares))*symbol["price"]), "symbol": symbol["symbol"]})
                 db.commit()
                 exists = 1
 
         if not exists:
-            db.execute("INSERT INTO "+rows[0]['username']+" (status,symbol, name, shares, price, total) VALUES (:status, :symbol, :name, :shares, :price, :total)",
-                        {"status": symbol["status"], "symbol": symbol["symbol"], "name": symbol["name"], "shares": int(shares), "price": symbol["price"], "total": toPay})
+            db.execute("INSERT INTO "+rows[0]['username']+" (status,symbol, name, shares, price, dollar_price, dollar_total, total) VALUES (:status, :symbol, :name, :shares, :price, :dp, :dt, :total)",
+                        {"status": symbol["status"], "symbol": symbol["symbol"], "name": symbol["name"], "shares": int(shares), "price": symbol["price"], "dp" : usd(symbol["price"]), "dt": usd(toPay), "total": toPay})
 
         global  bought
         bought = 1
-        db.execute("INSERT INTO "+history+" (symbol, name, shares, price, Time) VALUES (:symbol, :name, :shares, :price, now()::timestamp(0))",
-                    {"symbol": symbol["symbol"], "name": symbol["name"], "shares": int(shares), "price": symbol["price"]})
+        db.execute("INSERT INTO "+history+" (symbol, name, shares, dollar_price, price, Time) VALUES (:symbol, :name, :shares, :dp, :price, now()::timestamp(0))",
+                    {"symbol": symbol["symbol"], "name": symbol["name"], "shares": int(shares), "dp" : usd(symbol["price"]), "price": symbol["price"]})
         db.commit()
         return redirect('/')
 
@@ -215,7 +212,7 @@ def quote():
                           {"id": session["user_id"]}).fetchall()
     """Get stock quote."""
     if request.method == "POST":
-        result = lookup(request.form.get("symbol"))
+        result = lookup(request.form.get("Symbol"))
         if result == None:
             post = 2
             return render_template("quote.html", username=username[0]["username"], post=post)
@@ -285,13 +282,13 @@ def sell():
             shares_num = float(shares_num)
             update = lookup(stock_name)
             total = float(update["price"]) * shares_num
-            db.execute("UPDATE "+user[0]['username']+" SET shares = :newshares, total = :newtotal WHERE (symbol = :symbol)",
-                        { "newshares": rows[i]["shares"] - shares_num, "newtotal" : rows[i]["total"] - total ,"symbol": rows[i]["symbol"]})
+            db.execute("UPDATE "+user[0]['username']+" SET shares = :newshares, dollar_total = :dt, total = :newtotal WHERE (symbol = :symbol)",
+                        { "newshares": rows[i]["shares"] - shares_num, "dt" : usd(float(rows[i]["total"]) - total), "newtotal" : float(rows[i]["total"]) - total ,"symbol": rows[i]["symbol"]})
             db.execute("UPDATE users SET cash = :newcash WHERE (username = :username)",
                         {"newcash": float(this_user[0]["cash"]) + total, "username": user[0]["username"]})
 
-            db.execute("INSERT INTO "+history+" (symbol, name, shares, price, Time) VALUES (:symbol, :name, :shares, :price, now()::timestamp(0))",
-                    {"symbol": update["symbol"], "name": update["name"], "shares": 0-int(shares_num), "price": update["price"]})
+            db.execute("INSERT INTO "+history+" (symbol, name, shares, dollar_price, price, Time) VALUES (:symbol, :name, :shares, :dp, :price, now()::timestamp(0))",
+                    {"symbol": update["symbol"], "name": update["name"], "shares": 0-int(shares_num), "dp": usd(update["price"]), "price": update["price"]})
             db.commit()
 
             if int(rows[i]["shares"]) == shares_num:
