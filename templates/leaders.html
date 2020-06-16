@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Leaders
+{% endblock %}
+
+{% block main %}
+    <h1>Leader Board</h1>
+    <h6>Keep track on masters of trading and sellings</h6><br><br>
+    <table class="table">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">Place</th>
+                <th scope="col">Username</th>
+                <th scope="col">Cash</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in rows %}
+            <tr class="table-light">
+                <td>{{ loop.index }}</td>
+                <td>{{ row["username"] }}</td>
+                <td>$ {{ row["cash"] }}</td>
+            </tr>
+        {% endfor %}
+        {{ count }}
+        </tbody>
+    </table>
+    {% endblock %}

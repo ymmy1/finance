@@ -165,7 +165,7 @@ def login():
         # Ensure password was submitted
         elif not request.form.get("password"):
             return apology("must provide password", 403)
-            
+
         # Query database for username (http://zetcode.com/db/sqlalchemy/rawsql/)
         # https://docs.sqlalchemy.org/en/latest/core/connections.html#sqlalchemy.engine.ResultProxy
         rows = db.execute("SELECT * FROM users WHERE username = :username",
@@ -268,12 +268,23 @@ def sell():
     rows = db.execute("SELECT * FROM "+user[0]['username']).fetchall()
     if request.method == "GET":
         return render_template("sell.html", username=user[0]["username"], rows=rows)
+    
+
+    # Share Validation
+    
+
 
     history = "_".join((user[0]["username"], "history"))
     for i in range(0, len(rows), 1):
         this_user = db.execute("SELECT cash FROM users WHERE (id = :id)", {"id": session["user_id"]}).fetchall()
         stock_name = rows[i]["symbol"]
         shares_num = request.form.get(rows[i]["symbol"])
+
+        # Share validation
+        owned_shares = db.execute("SELECT shares FROM "+user[0]['username']+" WHERE (symbol = :symbol", {"symbol" : stock_name })
+        if int(ownder_shares) != int(shares_num)
+            return apology("some shares do not match", 403)
+
         if shares_num and int(shares_num) > 0:
             shares_num = float(shares_num)
             update = lookup(stock_name)
@@ -300,6 +311,12 @@ def sell():
 
     return redirect("/")
 
+@app.route("/leaders")
+@login_required
+def leadrs():
+    rows = db.execute("SELECT username, cash FROM users ORDER BY cash DESC")
+    
+    return render_template("leaders.html", rows=rows)
 
 
 
