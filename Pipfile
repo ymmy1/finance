@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+requests = "*"
+psycopg2-binary = "*"
+"sqlalchemy.orm" = "*"
+gunicorn = "*"
+Flask = "*"
+Flask-Session = "*"
+SQLAlchemy = "*"
+
+[requires]
+python_version = "3.8"
