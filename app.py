@@ -22,16 +22,8 @@ if not os.getenv("DATABASE_URL"):
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-# Ensure responses aren't cached
-@app.after_request
-def after_request(response):
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
-    return response
-
 # Custom filter
-# app.jinja_env.filters["usd"] = usd
+app.jinja_env.filters["usd"] = usd
 
 # Configure session to use filesystem (instead of signed cookies)
 # app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -225,6 +217,10 @@ def quote():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+
+    # Forget any user_id
+    session.clear()
+
     """Register user"""
     if request.method == "GET":
         return render_template("register.html")
@@ -256,13 +252,8 @@ def register():
     db.commit()
 
 
-    rows = db.execute("SELECT * FROM users WHERE username = username").fetchall()
-
-    # Remember which user has logged in
-    session["user_id"] = rows[0]["id"]
-
     # Redirect user to home page
-    return redirect("/")
+    return redirect("/login")
 
 @app.route("/sell", methods=["GET", "POST"])
 @login_required

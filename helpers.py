@@ -24,7 +24,6 @@ def apology(message, code=400):
 def login_required(f):
     """
     Decorate routes to require login.
-
     http://flask.pocoo.org/docs/1.0/patterns/viewdecorators/
     """
     @wraps(f)
