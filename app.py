@@ -79,7 +79,7 @@ def index():
     global  sold
     sstatus = sold
     sold = 0
-    return render_template("index.html", username=user[0]["username"], total=total, rows=rows, bought=bstatus, sold=sstatus)
+    return render_template("index.html", total=total, rows=rows, bought=bstatus, sold=sstatus)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -90,23 +90,23 @@ def buy():
     rows = db.execute("SELECT * FROM users WHERE (id = :id)",{"id" : session["user_id"]}).fetchall()
     if request.method == "GET":
 
-        return render_template("buy.html", username=rows[0]["username"], scene=scene)
+        return render_template("buy.html", scene=scene)
 
     else:
         symbol = lookup(request.form.get("symbol"))
         if symbol == None:
             scene = 1
-            return render_template("buy.html", username=rows[0]["username"], scene=scene)
+            return render_template("buy.html",  scene=scene)
 
         shares = request.form.get("shares")
         if shares == "" or int(shares) < 1:
             scene=1
-            return render_template("buy.html", username=rows[0]["username"], scene=scene)
+            return render_template("buy.html",  scene=scene)
 
         toPay = float(symbol["price"]) * int(shares)
         if rows[0]["cash"] < toPay:
             scene = 1
-            return render_template("buy.html", username=rows[0]["username"], scene=scene)
+            return render_template("buy.html",  scene=scene)
 
         cash = float(rows[0]["cash"]) - toPay
         db.execute("UPDATE users SET cash = :cash WHERE (id = :id)", {"cash": cash, "id" : session["user_id"]})
@@ -143,7 +143,7 @@ def history():
     history = "_".join((user[0]["username"], "history"))
     rows = db.execute("SELECT * FROM "+history+" ORDER BY id DESC").fetchall()
 
-    return render_template("history.html", username=user[0]["username"], rows=rows)
+    return render_template("history.html",  rows=rows)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -212,13 +212,13 @@ def quote():
         result = lookup(request.form.get("Symbol"))
         if result == None:
             post = 2
-            return render_template("quote.html", username=username[0]["username"], post=post)
+            return render_template("quote.html",  post=post)
         name = result["name"]
         symbol = result["symbol"]
         price = result["price"]
         post = 1
-        return render_template("quote.html", username=username[0]["username"], post=post, name=name, symbol=symbol, price=price)
-    return render_template("quote.html", username=username[0]["username"], post=post)
+        return render_template("quote.html",  post=post, name=name, symbol=symbol, price=price)
+    return render_template("quote.html",  post=post)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -267,12 +267,7 @@ def sell():
     user = db.execute("SELECT * FROM users WHERE (id = :id)", {"id": session["user_id"]}).fetchall()
     rows = db.execute("SELECT * FROM "+user[0]['username']).fetchall()
     if request.method == "GET":
-        return render_template("sell.html", username=user[0]["username"], rows=rows)
-    
-
-    # Share Validation
-    
-
+        return render_template("sell.html",  rows=rows)
 
     history = "_".join((user[0]["username"], "history"))
     for i in range(0, len(rows), 1):
