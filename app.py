@@ -280,12 +280,15 @@ def sell():
         stock_name = rows[i]["symbol"]
         shares_num = request.form.get(rows[i]["symbol"])
 
-        # Share validation
-        owned_shares = db.execute("SELECT shares FROM "+user[0]['username']+" WHERE (symbol = :symbol", {"symbol" : stock_name })
-        if int(ownder_shares) != int(shares_num)
-            return apology("some shares do not match", 403)
 
         if shares_num and int(shares_num) > 0:
+
+            # Share validation
+            owned_shares = db.execute("SELECT shares FROM "+user[0]['username']+" WHERE (symbol = :symbol)", {"symbol" : stock_name }).fetchone()
+            owned_share = owned_shares[0]
+            if int(owned_share) < int(shares_num) or 0 > int(shares_num):
+                return apology("some shares do not match", 403)
+
             shares_num = float(shares_num)
             update = lookup(stock_name)
             total = float(update["price"]) * shares_num
