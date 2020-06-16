@@ -39,7 +39,7 @@ db = scoped_session(sessionmaker(bind=engine))
 # db = sqlite3.connect('finance.db')
 
 # Creating users
-db.execute("CREATE TABLE IF NOT EXISTS users(id serial PRIMARY KEY NOT NULL,username VARCHAR (10) UNIQUE NOT NULL,hash VARCHAR (150) NOT NULL, cash NUMERIC NOT NULL DEFAULT 10000.00)")
+db.execute("CREATE TABLE IF NOT EXISTS users(id serial PRIMARY KEY NOT NULL, username TEXT UNIQUE NOT NULL,hash VARCHAR (150) NOT NULL, cash NUMERIC NOT NULL DEFAULT 10000.00)")
 db.commit()
 
 bought = 0
@@ -254,6 +254,7 @@ def register():
     password=generate_password_hash(request.form.get("password"))
     db.execute("INSERT INTO users (username, hash) VALUES(:username, :password)",
                 {"username": username, "password": password})
+
     db.commit()
 
 
