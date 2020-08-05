@@ -9,7 +9,7 @@
 
 ## Use the app on Heroku
 
-### https://cs50-finance-ymmy.herokuapp.com/
+### https://finance-ymmy.herokuapp.com/
 
 
 ## Usage
